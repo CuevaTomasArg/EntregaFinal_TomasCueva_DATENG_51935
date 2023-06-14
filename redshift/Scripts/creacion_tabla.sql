@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS cuevatomass02_coderhouse.ethereum_historical_data ;
-CREATE TABLE cuevatomass02_coderhouse.criptos_top_100 (
+CREATE TABLE cuevatomass02_coderhouse.top_criptos (
   id VARCHAR(100) DISTKEY,
   symbol CHAR(4) ,
   name VARCHAR(100) ,
@@ -16,12 +16,12 @@ CREATE TABLE cuevatomass02_coderhouse.criptos_top_100 (
   circulating_supply FLOAT,
   ath FLOAT,
   ath_change_percentage FLOAT,
-  ath_date TIMESTAMP,
+  ath_date TIMESTAMP, 
   atl FLOAT,
-  atl_change_percentage FLOAT,
+  atl_change_percentage FLOAT, 
   atl_date TIMESTAMP,
-  last_updated TIMESTAMP
-) SORTKEY(market_cap_rank);
+  last_updated TIMESTAMP 
+) SORTKEY(market_cap_rank, current_price);
 
 /*
 notas al lector:
