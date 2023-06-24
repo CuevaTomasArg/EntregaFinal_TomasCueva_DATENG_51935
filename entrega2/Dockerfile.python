@@ -1,0 +1,16 @@
+FROM python:3.11.4
+
+# Establece el directorio de trabajo
+WORKDIR /home/coder
+
+# Copia los archivos al contenedor
+COPY ./docker_shared_folder/scripts/ /home/coder/scripts/
+COPY ./docker_shared_folder/data/ /home/coder/data/
+
+VOLUME /home/coder/scripts/
+VOLUME /home/coder/data/
+
+# Instala las librerías adicionales
+RUN pip install pandas requests
+
+CMD ["tail", "-f", "/dev/null"]
