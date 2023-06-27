@@ -17,3 +17,5 @@ En resumen, lo que hago en el notebook es:
 5. Ejecuto el metodo "execute" de la clase Load que cual llama al metodo load_to_redshift, el cual es el que tiene el error que estoy intentando corregir.
 
 Averiguando, me di cuenta que es un error del driver que se encuentra en el directorio "/home/coder/working_dir/spark_drivers/postgresql-42.5.2.jar", el archivo "postgresql-42.5.2.jar" lo descargue del repositorio de la clase y lo puse en el directorio spark_drivers antes de ejecutar el "docker-compose up --build".
+
+Todo esto lo estoy ejecutando desde el localhost:8888/lab?token=coder
