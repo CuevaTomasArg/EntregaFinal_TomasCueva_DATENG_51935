@@ -9,8 +9,8 @@ from pyspark.sql import SparkSession
 
 class Load():
     
-    DRIVER_PATH = env['DRIVER_PATH']
-
+    DRIVER_PATH = env['DRIVER_PATH'] 
+    
     # Variables de configuración de Postgres
     POSTGRES_HOST = env['POSTGRES_HOST']
     POSTGRES_PORT = env['POSTGRES_PORT']
@@ -41,7 +41,8 @@ class Load():
                 .config("spark.jars", self.DRIVER_PATH) \
                 .config("spark.executor.extraClassPath", self.DRIVER_PATH) \
                 .getOrCreate()
-
+        print(self.DRIVER_PATH)
+        
     def load_to_redshift(self, df, table):
         print("Convertir el DataFrame de pandas a un PySpark DataFrame") 
         
