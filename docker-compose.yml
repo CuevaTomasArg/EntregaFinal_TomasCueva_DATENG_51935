@@ -2,19 +2,6 @@
 version: '3'
 
 services:
-
-  python:
-    image: python:3.11.4
-    container_name: sem7-python
-    volumes:
-    - ./docker_shared_folder/scripts:/home/coder/scripts
-    - ./docker_shared_folder/data:/home/coder/data
-    working_dir: /home/coder/scripts
-    command: tail -f /dev/null
-
-    networks:
-      sem_7_net:
-        ipv4_address: 172.7.7.3
   
   pyspark:
     image: jupyter/pyspark-notebook:2023-04-24

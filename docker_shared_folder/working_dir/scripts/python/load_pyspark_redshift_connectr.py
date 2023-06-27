@@ -7,8 +7,8 @@ from pyspark.sql import SparkSession
 # from pyspark.sql.types import *
 # from pyspark.sql.functions import *
 
-class my_ETL():
-
+class Load():
+    
     DRIVER_PATH = env['DRIVER_PATH']
 
     # Variables de configuración de Postgres
@@ -42,16 +42,35 @@ class my_ETL():
                 .config("spark.executor.extraClassPath", self.DRIVER_PATH) \
                 .getOrCreate()
 
+    def load_to_redshift(self, df, table):
+        print("Convertir el DataFrame de pandas a un PySpark DataFrame") 
+        
+        spark_df = self.spark.createDataFrame(df)
+        print(spark_df)
+        
+        print("Cargar el PySpark DataFrame en Redshift") 
+        try:
+            spark_df.write \
+                .format("jdbc") \
+                .option("url", self.REDSHIFT_URL) \
+                .option("dbtable", table) \
+                .option("user", self.REDSHIFT_USER) \
+                .option("password", self.REDSHIFT_PASSWORD) \
+                .option("driver", "com.amazon.redshift.jdbc.Driver") \
+                .mode("overwrite") \
+                .save()
+            
+            print("Dataframe subido")
+        except Exception as e:
+            print("Se produjo excepción", e)
+            
     
-    def execute(self):
+    def execute(self, df, table):
         print("Ejecutando ETL")
+        self.load_to_redshift(df, table)
 
-if __name__ == "__main__":
-    """
-    Como ejecutar el script:
-    spark-submit --driver-class-path $DRIVER_PATH --jars $DRIVER_PATH pyspark_redshift_connector.py
-    """
-    # Instanciamos la clase
-    etl = my_ETL()
-    # Ejecutamos el método execute
-    etl.execute()
+
+"""
+Como ejecutar el script:
+spark-submit --driver-class-path $DRIVER_PATH --jars $DRIVER_PATH pyspark_redshift_connector.py
+"""
