@@ -2,10 +2,11 @@
 version: '3'
 
 services:
-  
   pyspark:
-    image: jupyter/pyspark-notebook:2023-04-24
-    container_name: sem7-pyspark
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: pyspark
     ports:
       - "8888:8888"
     volumes:
@@ -21,11 +22,11 @@ services:
       CHOWN_HOME_OPTS: '-R'
       SPARK_CLASSPATH: '/home/coder/working_dir/driver_jdbc/postgresql-42.5.2.jar'
     networks:
-      sem_7_net:
+      etl_net:
         ipv4_address: 172.7.7.1
 
   postgres:
-    container_name: sem7-postgres-db
+    container_name: postgres-db
     # Official Postgres image from DockerHub (we use the last version)
     image: 'postgres:15'
     # limit the memory and cpu usage
@@ -38,12 +39,12 @@ services:
     env_file:
       - ./docker_shared_folder/.env
     networks:
-      sem_7_net:
-        ipv4_address: 172.7.7.2
+      etl_net:
+        ipv4_address: 172.7.7.4
 
 
 networks:
-  sem_7_net: # Name of the network
+  etl_net: # Name of the network
     ipam: # IP Address Management
       driver: default
       config:
