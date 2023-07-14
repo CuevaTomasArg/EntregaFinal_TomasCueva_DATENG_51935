@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
     
-def transformation_top(json):
+def transformation_top(json, spark_session):
     """
     Transforma los datos de las 100 criptomonedas de mayor capitalización obtenidos de la API de CoinGecko
     en un DataFrame de Pandas y selecciona las columnas deseadas.
@@ -12,15 +12,21 @@ def transformation_top(json):
     Returns:
     pandas.DataFrame: Un DataFrame que contiene las columnas seleccionadas.
     """
-    df = pd.DataFrame(json)
+     # Crear un DataFrame de PySpark a partir de los datos JSON
+    df = spark_session.read.json(
+        spark_session.sparkContext.parallelize(json),
+        multiLine = True
+    )
+
+    # Seleccionar las columnas deseadas
     selected_columns = [
-        'id', 
-        'symbol', 
-        'name', 
-        'current_price', 
-        'market_cap', 
-        'market_cap_rank', 
-        'total_volume', 
+        'id',
+        'symbol',
+        'name',
+        'current_price',
+        'market_cap',
+        'market_cap_rank',
+        'total_volume',
         'high_24h',
         'low_24h',
         'price_change_24h',
@@ -36,8 +42,8 @@ def transformation_top(json):
         'atl_date',
         'last_updated',
     ]
-    df = df.loc[:, selected_columns]
-    
+    df = df.select(selected_columns)
+
     return df
 
 def json_to_df_market_chart(json,cripto):
