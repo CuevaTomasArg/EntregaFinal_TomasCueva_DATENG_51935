@@ -24,7 +24,7 @@
 # The following variables are supported:
 #
 # AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:2.3.3
+#                                Default: apache/airflow:2.6.2
 # AIRFLOW_UID                  - User ID in Airflow containers
 #                                Default: 50000
 # Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
@@ -44,7 +44,9 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.3.3}
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
   # build: .
   environment:
     &airflow-common-env
@@ -56,37 +58,20 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: 10
+  env_file:
+    - .env
   volumes:
-    - ./docker_shared_folder/airflow/dags:/opt/airflow/dags
-    - ./docker_shared_folder/airflow/logs:/opt/airflow/logs
-    - ./docker_shared_folder/airflow/plugins:/opt/airflow/plugins
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./scripts:/opt/airflow/scripts
+    - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
   depends_on:
     postgres:
       condition: service_healthy
 
 services:
-  pyspark:
-    image: jupyter/pyspark-notebook:2023-04-24
-    container_name: pyspark
-    ports:
-      - "8888:8888"
-    volumes:
-      - ./docker_shared_folder/working_dir:/home/coder/working_dir
-    user: root
-    working_dir: /home/coder/working_dir
-    env_file:
-      - ./docker_shared_folder/.env
-    environment:
-      NB_USER: coder
-      NB_GID: 1000
-      CHOWN_HOME: 'yes'
-      CHOWN_HOME_OPTS: '-R'
-      SPARK_CLASSPATH: '/home/coder/working_dir/driver_jdbc/postgresql-42.5.2.jar'
-    networks:
-      etl_net:
-        ipv4_address: 172.7.7.1
-  
   postgres:
     image: postgres:13
     environment:
@@ -101,30 +86,26 @@ services:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
-    networks:
-      etl_net:
-        ipv4_address: 172.7.7.2
+    restart: always
 
   airflow-webserver:
     <<: *airflow-common
+    # command: python -m pip install yfinance && webserver
     command: webserver
     ports:
       - 8080:8080
+
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
       timeout: 10s
       retries: 5
-    networks:
-      etl_net:
-        ipv4_address: 172.7.7.3
+    restart: always
 
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
-    networks:
-      etl_net:
-        ipv4_address: 172.7.7.4
+    restart: always
 
   airflow-init:
     <<: *airflow-common
@@ -136,21 +117,44 @@ services:
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-    networks:
-      etl_net:
-        ipv4_address: 172.7.7.5
-  
 
-      
+  spark:
+    build: 
+      context: .
+      dockerfile: Dockerfile.airflow    
+    image: lucastrubiano/spark:spark_3_4_1
+    hostname: spark
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8090:8080'
+      - '7077:7077'
+    env_file:
+      - .env
+    volumes:
+      # - ./spark_working_dir:/home/spark/working_dir
+      - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
+  
+  spark-worker:
+    image: lucastrubiano/spark:spark_3_4_1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    env_file:
+      - .env
+    volumes:
+      # - ./spark_working_dir:/home/spark/working_dir
+      - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
+
 volumes:
   postgres-db-volume:
-
-
-networks:
-  etl_net: # Name of the network
-    ipam: # IP Address Management
-      driver: default
-      config:
-        - subnet: 172.7.7.0/16 # Subnet
-        # 172.7.7.0 is the default subnet for docker
-        # 16 is the number of bits used for the network

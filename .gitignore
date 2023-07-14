@@ -1,3 +1,7 @@
+dags/
+logs/
+plugins/
+.env
 notes/
 venv/
 redshift/
