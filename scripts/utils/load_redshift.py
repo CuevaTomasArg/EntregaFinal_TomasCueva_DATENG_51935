@@ -1,4 +1,4 @@
-def load_to_redshift(self, df, table):
+def load_to_redshift(df, table, redshift_url, redshift_user, redshift_password):
     """
     Carga un DataFrame de pandas en Redshift.
 
@@ -8,18 +8,14 @@ def load_to_redshift(self, df, table):
 
     """
 
-    print("Convertir el DataFrame de pandas a un PySpark DataFrame") 
-    spark_df = self.spark.createDataFrame(df)
-    print(spark_df)
-    
-    print("Cargar el PySpark DataFrame en Redshift") 
+    print(">>> Ejecutando carga")  
     try:
-        spark_df.write \
+        df.write \
             .format("jdbc") \
-            .option("url", self.REDSHIFT_URL) \
+            .option("url", redshift_url) \
             .option("dbtable", table) \
-            .option("user", self.REDSHIFT_USER) \
-            .option("password", self.REDSHIFT_PASSWORD) \
+            .option("user", redshift_user) \
+            .option("password", redshift_password) \
             .option("driver", "org.postgresql.Driver") \
             .mode("overwrite") \
             .save()
@@ -28,16 +24,3 @@ def load_to_redshift(self, df, table):
     except Exception as e:
         print("Se produjo excepción:", e)
         
-
-def execute(self, df, table):
-    """
-    Ejecuta el proceso de ETL para cargar un DataFrame en Redshift.
-
-    Parameters:
-    df (pandas.DataFrame): El DataFrame de pandas a cargar.
-    table (str): El nombre de la tabla en Redshift donde se cargará el DataFrame.
-
-    """
-
-    print("Ejecutando ETL")
-    self.load_to_redshift(df, table)
