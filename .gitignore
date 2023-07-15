@@ -9,3 +9,4 @@ redshift/
 __pycache__/
 postgres_data/
 airflow/
+docker_shared_folder/

@@ -1,16 +1,15 @@
-import pandas as pd
-import numpy as np
-    
+from pyspark.sql.functions import col, expr
+
 def transformation_top(json, spark_session):
     """
     Transforma los datos de las 100 criptomonedas de mayor capitalización obtenidos de la API de CoinGecko
     en un DataFrame de Pandas y selecciona las columnas deseadas.
 
     Parameters:
-    json (list): Los datos de las 100 criptomonedas en formato JSON.
+    json (dict): Los datos de las 100 criptomonedas en formato JSON.
 
     Returns:
-    pandas.DataFrame: Un DataFrame que contiene las columnas seleccionadas.
+    pyspark.sql.DataFrame: Un DataFrame que contiene las columnas seleccionadas.
     """
      # Crear un DataFrame de PySpark a partir de los datos JSON
     df = spark_session.read.json(
@@ -46,26 +45,26 @@ def transformation_top(json, spark_session):
 
     return df
 
-def json_to_df_market_chart(json,cripto):
+def json_to_df_market_chart(json, cripto, spark_session):
     """
-    Convierte los datos de mercado en formato JSON en un DataFrame de Pandas
+    Convierte los datos de mercado en formato JSON en un DataFrame de PySpark
     y realiza algunas transformaciones y asignaciones de columnas.
 
     Parameters:
     json (dict): Los datos de mercado en formato JSON.
     cripto (str): El nombre de la criptomoneda.
+    spark_session (pyspark.sql.SparkSession): La sesión de Spark.
 
     Returns:
-    pandas.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
+    pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
 
     """
-    df = pd.DataFrame(json)
-    df['timestamp'] = df['prices'].str[0]
-    df['prices'] = df['prices'].str[1]
-    df['market_caps'] = df['market_caps'].str[1]
-    df['market_caps'] = df['market_caps'].apply(lambda x: float('{:.3f}'.format(x)))
-    df['total_volumes'] = df['total_volumes'].str[1]
-    df['total_volumes'] = df['total_volumes'].apply(lambda x: float('{:.3f}'.format(x)))
-    df['cripto'] = cripto
+    df = spark_session.read.json(spark_session.sparkContext.parallelize([json]), multiLine=True)
+    df = df.withColumn('timestamp', col('prices')[0])
+    df = df.withColumn('prices', col('prices')[1])
+    df = df.withColumn('market_caps', expr("market_caps[1] * 1000").cast('double'))
+    df = df.withColumn('total_volumes', expr("total_volumes[1] * 1000").cast('double'))
+    df = df.withColumn('cripto', col(cripto))
     
     return df
+

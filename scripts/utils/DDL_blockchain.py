@@ -10,10 +10,8 @@ conn_params = {
     'database': env['REDSHIFT_DB']
 }
 
-# Establecer la conexión y crear el cursor dentro del contexto 'with'
 with psycopg2.connect(**conn_params) as conn:
     with conn.cursor() as cur:
-        # Definir el comando SQL para crear la tabla criptos_market_cap
         create_table_markets_cap = sql.SQL('''
             CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.criptos_market_cap (
                 id VARCHAR(100) DISTKEY PRIMARY KEY,
@@ -40,7 +38,6 @@ with psycopg2.connect(**conn_params) as conn:
             ) SORTKEY(market_cap_rank, high_24h, low_24h, total_volume);
         ''')
 
-        # Definir el comando SQL para crear la tabla market_chart_criptos
         create_table_markets_chart = sql.SQL('''
             CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.market_chart_criptos (
                 id VARCHAR(100) DISTKEY PRIMARY KEY,
@@ -51,9 +48,7 @@ with psycopg2.connect(**conn_params) as conn:
             ) SORTKEY(date_unix);
         ''')
 
-        # Ejecutar los comandos SQL para crear las tablas
         cur.execute(create_table_markets_cap)
         cur.execute(create_table_markets_chart)
 
-        # Confirmar los cambios en la base de datos
         conn.commit()
