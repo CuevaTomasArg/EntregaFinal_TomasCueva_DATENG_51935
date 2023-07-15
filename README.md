@@ -3,41 +3,62 @@
 Dentro de este repositorio se encuentra el proceso del proyecto final del curso "Data Engineering flex" de Coderhouse.
 
 ## Contenido
-* docker-compose.yml: Este archivo contiene los servicios utilizados para la ejecución del proyecto:
-    * Servicio pyspark:
-        * Utiliza la imagen jupyter/pyspark-notebook:2023-04-24.
-        * El contenedor se nombra como "sem7-pyspark".
-        * Mapea el puerto local 8888 al puerto 8888 dentro del contenedor.
-        * Comparte el directorio local ./docker_shared_folder/working_dir con el directorio /home/coder/working_dir dentro del contenedor.
-        * Utiliza el archivo .env ubicado en ./docker_shared_folder para cargar las variables de entorno.
-        * Configura las variables de entorno NB_USER, NB_GID, CHOWN_HOME, CHOWN_HOME_OPTS y SPARK_CLASSPATH.
-        * Se asigna a la red sem_7_net con una dirección IP específica.
+Los archivos a tener en cuenta son:
+* `docker-compose.yml`: Archivo de configuración de Docker Compose. Contiene la configuración de los servicios de Airflow y Spark.
+* `.env`: Archivo de variables de entorno. Contiene variables de conexión a Redshift y driver de Postgres.
+* `Dockerfile.airflow`:  Dockerfile utilizado por Docker Compose para construir la imagen de airflow.
+* `Dockerfile.spark`:  Dockerfile utilizado por Docker Compose para construir la imagen de spark master, worker y submit.
+* `requirements.txt` : Lista las dependencias necesarias para correr el ETL.
+* `drivers/`: Carpeta con drivers.
+    * `postgresql-42.5.2.jar`: Driver de Postgres para Spark.
+* `dags/`: Carpeta con los archivos de los DAGs.
+    * `etl_top_tokens.py`: DAG que ejecuta el ETL de extracción, transformación y carga de datos de API de CoinGecko a Amazon Redshift.
+* `logs/`: Carpeta con los archivos de logs de Airflow.
+* `plugins/`: Carpeta con los plugins de Airflow.
+* `scripts/`: Carpeta con scripts SQL, Bash y Python.
+    * `bash/`: Carpeta con scripts de bash.
+    * `sql/`: Carpeta con scripts SQL.
+        * `creacion_tabla.sql`: scripts de creación de tablas en Amazon Redshift.
+    * `utils/`: Paquete de python compuesto por modulos para extraer, transformar y cargar datos.
+        * `extract_CoinGecko.py`: Modulo para extrar datos de la API pública de CoinGecko.
+        * `transform_df.py`: Modulo para transformar o castear datos.
+        * `load_redshift.py`: Modulo de carga de datos desde DataFrame de Spark a Data Warehouse de Amazon Redshift.
+    * `ETL_top_tokens.py`: Script que contiene el proceso ETL que ejecuta el DAG `etl_top_tokens.py`.
 
-    * Servicio postgres:
-        * Utiliza la imagen oficial de Postgres versión 15.
-        * El contenedor se nombra como "sem7-postgres-db".
-        * Mapea el puerto local 5435 al puerto 5435 dentro del contenedor.
-        * Comparte el directorio local ./docker_shared_folder/postgres_data con el directorio /var/lib/postgresql/data dentro del contenedor.
-        * Configura el comando -p 5435 para especificar el puerto de escucha de Postgres.
-        * Utiliza el archivo .env ubicado en ./docker_shared_folder para cargar las variables de entorno.
-        * Se asigna a la red sem_7_net con una dirección IP específica.
-        * Además, se define una red llamada sem_7_net con la configuración IPAM (IP Address Management) que utiliza el controlador predeterminado y asigna una subred 172.7.7.0/16.
 
-* docker_shared_folder/: Contiene los siguientes directorios y archivos.
-    * working_dir: Es el directorio que contiene el notebook, scripts y modulo necesarios para la ejecución del proyecto.
-        * etl/: Es un modulo de python el cual contiene las clases necesarias para ejecutar realizar un ETL a través de las clases Extract, Transform y Load, las cuales se encuentran en los respectivos archivos.
-        * scripts/: Directorio con scripts de python y sql.
-        * spark_drivers/: contiene el driver para conectarse a la base de datos de Redshift mediante el uso de Spark.
-        * ETL-notebook.ipynb: El notebook principal el cual importa las bibliotecas Pandas, Requests, Numpy , SQLAlchemy y psycopg2-binary junto con el paquete etl que se encuentra dentro de la misma altura que este archivo.
-    * .env: Archivo con variables de entorno.
-
-## Creación del entorno
-1. Para crear el entorno es necesario tener instalada Docker Desktop (https://www.docker.com/products/docker-desktop).
-2. Creamos el directorio "postgres_data", dentro del directorio docker_shared_folder.
-3. Posicionados en el directorio raiz del proyecto ejecutamos:
+## Ejecución del proyecto
+1. Posicionarse en la carpeta raiz del proyecto,a esta altura del archivo `docker-compose.yml`.
+2. Crear las siguientes carpetas a la misma altura del `docker-compose.yml`.
 ```bash
-  docker-compose up --build
+mkdir -p logs,plugins
 ```
-4. Para acceder a JupyterLab ingresar a http://localhost:8888/lab?token=coder .
+3. Ejecutar el siguiente comando para levantar los servicios de Airflow y Spark.
+```bash
+docker-compose up --build
+```
+4. Una vez que los servicios estén levantados, ingresar a Airflow en `http://localhost:8080/` con usuario "airflow" y contraseña "airflow".
+5. En la pestaña `Admin -> Connections` crear una nueva conexión con los siguientes datos para Redshift:
+    * Conn Id: `redshift_default`
+    * Conn Type: `Amazon Redshift`
+    * Host: `host de redshift`
+    * Database: `base de datos de redshift`
+    * Schema: `esquema de redshift`
+    * User: `usuario de redshift`
+    * Password: `contraseña de redshift`
+    * Port: `5439`
+6. En la pestaña `Admin -> Connections` crear una nueva conexión con los siguientes datos para Spark:
+    * Conn Id: `spark_default`
+    * Conn Type: `Spark`
+    * Host: `spark://spark`
+    * Port: `7077`
+    * Extra: `{"queue": "default"}`
+7. En la pestaña `Admin -> Variables` crear una nueva variable con los siguientes datos:
+    * Key: `driver_class_path`
+    * Value: `/tmp/drivers/postgresql-42.5.2.jar`
+8. En la pestaña `Admin -> Variables` crear una nueva variable con los siguientes datos:
+    * Key: `spark_scripts_dir`
+    * Value: `/opt/airflow/scripts`
+9. Si no aparecen los dags una vez agregadas las conexiones y las variables, detener el contenedor con `ctrl + c` en la misma consola (si por alguna razon usaste un `docker-compose up -d` utiliza en comando `docker-compose down` dentro del mismo directorio) y ejecuta denuevo el comando `docker-compose up`.
+10. Ejecutar el DAG `etl_top_tokens`.
 
 

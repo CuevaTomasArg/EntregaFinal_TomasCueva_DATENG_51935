@@ -63,9 +63,9 @@ defaul_args = {
 }
 
 with DAG(
-    dag_id="etl_users",
+    dag_id="etl_top_tokens",
     default_args=defaul_args,
-    description="ETL de la tabla users",
+    description="ETL de carga de datos del top 100 tokens con mayor capitalización ded mercado",
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
@@ -99,7 +99,7 @@ with DAG(
     )
 
     spark_etl_tokens = SparkSubmitOperator(
-        task_id = "spark_etl_users",
+        task_id = "spark_etl_tokens",
         application = f'{Variable.get("spark_scripts_dir")}/ETL_top_tokens.py',
         conn_id = "spark_default",
         dag = dag,

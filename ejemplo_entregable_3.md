@@ -16,7 +16,7 @@ Los archivos a tener en cuenta son:
     * `common.py`: Script de Spark con funciones comunes.
     * `ETL_Users.py`: Script de Spark que ejecuta el ETL.
 
-# Pasos para ejecutar el ejemplo
+# Pasos para ejecutar proyecto
 1. Posicionarse en la carpeta `otros/ejemplo_entregable_3`. A esta altura debería ver el archivo `docker-compose.yml`.
 2. Crear las siguientes carpetas a la misma altura del `docker-compose.yml`.
 ```bash
