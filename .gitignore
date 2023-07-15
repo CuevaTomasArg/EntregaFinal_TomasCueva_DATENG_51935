@@ -4,8 +4,5 @@ plugins/
 notes/
 venv/
 redshift/
-.ipynb_checkpoints/
 __pycache__/
-postgres_data/
 airflow/
-docker_shared_folder/

@@ -121,8 +121,7 @@ services:
   spark:
     build: 
       context: .
-      dockerfile: Dockerfile.airflow    
-    image: lucastrubiano/spark:spark_3_4_1
+      dockerfile: Dockerfile.spark
     hostname: spark
     environment:
       - SPARK_MODE=master
@@ -140,7 +139,9 @@ services:
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
   
   spark-worker:
-    image: lucastrubiano/spark:spark_3_4_1
+    build: 
+      context: .
+      dockerfile: Dockerfile.spark
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
