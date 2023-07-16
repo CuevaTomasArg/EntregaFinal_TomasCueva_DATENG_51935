@@ -1,4 +1,67 @@
-from pyspark.sql.functions import col, expr
+from pyspark.sql.functions import col
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, LongType
+
+def clean_json_data(json_data, id_list):
+    """
+    Limpia la lista de JSONs de mercado y asocia cada conjunto de datos con su respectivo identificador.
+
+    Parameters:
+    json_data (list): Una lista de diccionarios en formato JSON.
+    id_list (list): Una lista de identificadores correspondientes a cada conjunto de datos en json_data.
+
+    Returns:
+    list: Una lista de diccionarios limpios con sus respectivos identificadores o diccionarios vacíos si hay algún error en los datos.
+    """
+    print(">>> Limpiando datos")
+    cleaned_data = []
+
+    for data, id in zip(json_data, id_list):
+        if isinstance(data, dict):
+            data['id'] = id  # Agregar el identificador a los datos
+            cleaned_data.append(data)
+        else:
+            print(f">>> Data inválida: {data}")
+            cleaned_data.append({})
+
+    print(">>> Limpieza finalizada")
+    return cleaned_data
+
+def json_to_df_market_chart(json_data, id_list, spark_session):
+    """
+    Convierte los datos de mercado en formato JSON en un DataFrame de PySpark
+    y realiza algunas transformaciones y asignaciones de columnas.
+
+    Parameters:
+    json_data (list): Una lista de datos de mercado en formato JSON.
+    id_list (list): Una lista de identificadores correspondientes a cada conjunto de datos en json_data.
+    spark_session (pyspark.sql.SparkSession): La sesión de Spark.
+
+    Returns:
+    pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
+    """
+    cleaned_data = clean_json_data(json_data, id_list)
+
+    schema = StructType([
+        StructField("id", StringType(), True),
+        StructField("prices", FloatType(), True),  # Cambiar el tipo de dato a FloatType
+        StructField("market_caps", FloatType(), True),  # Cambiar el tipo de dato a FloatType
+        StructField("total_volumes", FloatType(), True),  # Cambiar el tipo de dato a FloatType
+        StructField("timestamp", LongType(), True)  # Cambiar el tipo de dato a LongType para date_unix
+    ])
+
+    df = spark_session.createDataFrame([], schema)
+
+    for data in cleaned_data:
+        temp_df = spark_session.createDataFrame([data], schema)
+        df = df.union(temp_df)
+
+    df = df.withColumn('timestamp', col('timestamp') // 1000)  # Convertir la fecha a segundos (date_unix)
+    df = df.withColumn('cripto', col('id'))  # Agregar la columna cripto como copia del campo id
+
+    print(">>> DataFrame listo para la carga")
+    return df
+
+
 
 def transformation_top(json, spark_session):
     """
@@ -11,13 +74,11 @@ def transformation_top(json, spark_session):
     Returns:
     pyspark.sql.DataFrame: Un DataFrame que contiene las columnas seleccionadas.
     """
-     # Crear un DataFrame de PySpark a partir de los datos JSON
     df = spark_session.read.json(
         spark_session.sparkContext.parallelize(json),
         multiLine = True
     )
 
-    # Seleccionar las columnas deseadas
     selected_columns = [
         'id',
         'symbol',
@@ -43,28 +104,6 @@ def transformation_top(json, spark_session):
     ]
     df = df.select(selected_columns)
 
-    return df
-
-def json_to_df_market_chart(json, cripto, spark_session):
-    """
-    Convierte los datos de mercado en formato JSON en un DataFrame de PySpark
-    y realiza algunas transformaciones y asignaciones de columnas.
-
-    Parameters:
-    json (dict): Los datos de mercado en formato JSON.
-    cripto (str): El nombre de la criptomoneda.
-    spark_session (pyspark.sql.SparkSession): La sesión de Spark.
-
-    Returns:
-    pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
-
-    """
-    df = spark_session.read.json(spark_session.sparkContext.parallelize([json]), multiLine=True)
-    df = df.withColumn('timestamp', col('prices')[0])
-    df = df.withColumn('prices', col('prices')[1])
-    df = df.withColumn('market_caps', expr("market_caps[1] * 1000").cast('double'))
-    df = df.withColumn('total_volumes', expr("total_volumes[1] * 1000").cast('double'))
-    df = df.withColumn('cripto', col(cripto))
+    print(">>> Columnas filtradas.")
     
     return df
-

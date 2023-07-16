@@ -86,7 +86,6 @@ services:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
       retries: 5
-    restart: always
 
   airflow-webserver:
     <<: *airflow-common
@@ -100,12 +99,10 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    restart: always
 
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
-    restart: always
 
   airflow-init:
     <<: *airflow-common

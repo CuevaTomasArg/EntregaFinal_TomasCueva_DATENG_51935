@@ -20,7 +20,7 @@ def load_to_redshift(df, table, redshift_url, redshift_user, redshift_password):
             .mode("overwrite") \
             .save()
         
-        print("Dataframe subido")
+        print(">>> Dataframe subido con exito")
     except Exception as e:
-        print("Se produjo excepción:", e)
+        print(">>>  Se produjo excepción:", e)
         

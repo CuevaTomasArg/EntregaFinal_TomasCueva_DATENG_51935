@@ -1,23 +1,24 @@
-from utils.extract_CoinGecko import get_criptos_top
-from utils.transform_df import transformation_top
+from utils.extract_CoinGecko import get_market_chart
+from utils.transform_df import json_to_df_market_chart
 from utils.load_redshift import load_to_redshift
 from utils.pyspark import PySparkSession
-class ETLTopTokens(PySparkSession):
+class ETLMarketCharts(PySparkSession):
     """
     Proceso ETL del top 100 de criptomonedas con mayor capitalizacion de mercado.
     """
 
     def __init__(self):
         super().__init__()
-        self.table = "criptos_market_cap"
+        self.table = "historical_data"
         self.URL_BASE = "https://api.coingecko.com/api/v3/"
-
+        self.id_list = ["bitcoin", "ethereum", "tether", "binancecoin", "ripple"]
+        
     def extract(self):
-        json = get_criptos_top(self.URL_BASE)
+        json = get_market_chart(self.URL_BASE, self.id_list)
         return json
     
     def transform(self, json):
-        df = transformation_top(json, self.spark)
+        df = json_to_df_market_chart(json, self.id_list, self.spark)
         return df
      
     def load(self, df):
@@ -26,7 +27,7 @@ class ETLTopTokens(PySparkSession):
 
 
 if __name__ == "__main__":
-    etl = ETLTopTokens()
+    etl = ETLMarketCharts()
     json = etl.extract()
     
     if isinstance(json, str):
