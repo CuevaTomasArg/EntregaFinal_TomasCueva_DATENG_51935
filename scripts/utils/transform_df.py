@@ -1,31 +1,7 @@
-from pyspark.sql.functions import col
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, LongType
-
-def clean_json_data(json_data, id_list):
-    """
-    Limpia la lista de JSONs de mercado y asocia cada conjunto de datos con su respectivo identificador.
-
-    Parameters:
-    json_data (list): Una lista de diccionarios en formato JSON.
-    id_list (list): Una lista de identificadores correspondientes a cada conjunto de datos en json_data.
-
-    Returns:
-    list: Una lista de diccionarios limpios con sus respectivos identificadores o diccionarios vacíos si hay algún error en los datos.
-    """
-    print(">>> Limpiando datos")
-    cleaned_data = []
-
-    for data, id in zip(json_data, id_list):
-        if isinstance(data, dict):
-            data['id'] = id  # Agregar el identificador a los datos
-            cleaned_data.append(data)
-        else:
-            print(f">>> Data inválida: {data}")
-            cleaned_data.append({})
-
-    print(">>> Limpieza finalizada")
-    return cleaned_data
-
+from functools import reduce
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col, format_number
 def json_to_df_market_chart(json_data, id_list, spark_session):
     """
     Convierte los datos de mercado en formato JSON en un DataFrame de PySpark
@@ -39,30 +15,41 @@ def json_to_df_market_chart(json_data, id_list, spark_session):
     Returns:
     pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
     """
-    cleaned_data = clean_json_data(json_data, id_list)
-
     schema = StructType([
-        StructField("id", StringType(), True),
-        StructField("prices", FloatType(), True),  # Cambiar el tipo de dato a FloatType
-        StructField("market_caps", FloatType(), True),  # Cambiar el tipo de dato a FloatType
-        StructField("total_volumes", FloatType(), True),  # Cambiar el tipo de dato a FloatType
-        StructField("timestamp", LongType(), True)  # Cambiar el tipo de dato a LongType para date_unix
+        StructField("prices", FloatType(), True),
+        StructField("market_caps", FloatType(), True),
+        StructField("total_volumes", FloatType(), True),
+        StructField("date_unix", LongType(), True),
+        StructField("id", StringType(), True) 
     ])
 
-    df = spark_session.createDataFrame([], schema)
+    def process_json(json, cripto):
+        prices = [float(prices_list[1]) if prices_list[1] is not None else 0.0 for prices_list in json["prices"]]
+        market_caps = [float(market_caps_list[1]) if market_caps_list[1] is not None else 0.0 for market_caps_list in json["market_caps"]]
+        total_volumes = [float(total_volumes_list[1]) if total_volumes_list[1] is not None else 0.0 for total_volumes_list in json["total_volumes"]]
+        timestamps = [timestamps_list[0] for timestamps_list in json["prices"]]
+        join = zip(prices, market_caps, total_volumes, timestamps)
+        join_list = list(join)
+        join_list = [(item + (cripto,)) for item in join_list]
+        return spark_session.createDataFrame(join_list, schema)
 
-    for data in cleaned_data:
-        temp_df = spark_session.createDataFrame([data], schema)
-        df = df.union(temp_df)
+    # Procesar cada json con la función map
+    dfs = map(process_json, json_data, id_list)
 
-    df = df.withColumn('timestamp', col('timestamp') // 1000)  # Convertir la fecha a segundos (date_unix)
-    df = df.withColumn('cripto', col('id'))  # Agregar la columna cripto como copia del campo id
+    # Unir todos los DataFrames en uno solo con la función reduce
+    final_df = reduce(DataFrame.union, dfs)
 
-    print(">>> DataFrame listo para la carga")
-    return df
+    # Formatear la columna "market_caps" sin notación científica
+    final_df = final_df.withColumn("market_caps", format_number(col("market_caps"), 2))
 
-
-
+    # Reordenar las columnas del DataFrame para que coincidan con el orden de la tabla
+    final_df = final_df.select("id", "prices", "total_volumes", "market_caps", "date_unix")
+    # Mostrar el DataFrame con market_caps formateado
+    final_df.show()
+    
+    return final_df
+        
+        
 def transformation_top(json, spark_session):
     """
     Transforma los datos de las 100 criptomonedas de mayor capitalización obtenidos de la API de CoinGecko

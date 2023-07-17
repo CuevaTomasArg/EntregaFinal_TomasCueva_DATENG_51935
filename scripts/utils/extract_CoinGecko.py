@@ -27,7 +27,7 @@ def fetch_market_chart(base_url, id):
         response = requests.get(url, params = parameters)
         response.raise_for_status()
         data = response.json()
-        print(">>> Solicitud exitosa")
+        print(f">>> Solicitud de id:{id} exitosa")
         return data
 
     except requests.exceptions.RequestException as e:

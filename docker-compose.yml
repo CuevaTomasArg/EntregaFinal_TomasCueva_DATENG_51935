@@ -47,12 +47,10 @@ x-airflow-common:
   build:
     context: .
     dockerfile: Dockerfile.airflow
-  # build: .
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    # For backward compatibility, with Airflow <2.3
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
@@ -89,16 +87,15 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    # command: python -m pip install yfinance && webserver
     command: webserver
     ports:
       - 8080:8080
-
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s
       timeout: 10s
       retries: 5
+    timeout: 300s
 
   airflow-scheduler:
     <<: *airflow-common
@@ -106,7 +103,6 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    # yamllint disable rule:line-length
     command: version
     environment:
       <<: *airflow-common-env
@@ -127,12 +123,11 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     ports:
-      - '8090:8080'
-      - '7077:7077'
+      - 8090:8080
+      - 7077:7077
     env_file:
       - .env
     volumes:
-      # - ./spark_working_dir:/home/spark/working_dir
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
   
   spark-worker:
@@ -151,7 +146,6 @@ services:
     env_file:
       - .env
     volumes:
-      # - ./spark_working_dir:/home/spark/working_dir
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
 
 volumes:

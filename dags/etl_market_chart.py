@@ -6,28 +6,12 @@ from airflow.models import Variable
 from datetime import datetime, timedelta
 
 QUERY_CREATE_TABLE = '''
-    CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.criptos_market_cap (
+    CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.market_charts(
         id VARCHAR(100) DISTKEY PRIMARY KEY,
-        symbol CHAR(4),
-        name VARCHAR(100),
-        current_price FLOAT,
-        market_cap FLOAT,
-        market_cap_rank INT,
-        total_volume FLOAT,
-        high_24h FLOAT,
-        low_24h FLOAT,
-        price_change_24h FLOAT,
-        price_change_percentage_24h FLOAT,
-        market_cap_change_24h FLOAT,
-        market_cap_change_percentage_24h FLOAT,
-        circulating_supply FLOAT,
-        ath FLOAT,
-        ath_change_percentage FLOAT,
-        ath_date TIMESTAMP,
-        atl FLOAT,
-        atl_change_percentage FLOAT,
-        atl_date TIMESTAMP,
-        last_updated TIMESTAMP
+        prices FLOAT,
+        total_volumes FLOAT,
+        market_caps FLOAT,
+        date_unix DOUBLE PRECISION
     );
 '''
 
@@ -43,7 +27,6 @@ def get_process_date(**kwargs):
         )
     kwargs["ti"].xcom_push(key = "process_date", value = process_date)
 
-
 defaul_args = {
     "owner": "Tomas Cueva",
     "start_date": datetime(2023, 7, 1),
@@ -52,11 +35,11 @@ defaul_args = {
 }
 
 with DAG(
-    dag_id = "etl_top_tokens",
+    dag_id = "etl_market_chart",
     default_args = defaul_args,
-    description = "ETL del top 100 tokens con mayor capitalización ded mercado",
-    schedule_interval = "@daily",
-    catchup = False,
+    description = "ETL de la cotización de 5 tokens a lo largo del tiempo",
+    schedule_interval = '@daily',
+    catchup = False
 ) as dag:
     
     get_process_date_task = PythonOperator(
@@ -67,18 +50,18 @@ with DAG(
     )
     
     create_table = SQLExecuteQueryOperator(
-        task_id="create_table",
-        conn_id="redshift_default",
-        sql=QUERY_CREATE_TABLE,
-        dag=dag,
+        task_id = "create_table",
+        conn_id = "redshift_default",
+        sql = QUERY_CREATE_TABLE,
+        dag = dag,
     )
 
-    spark_etl_tokens = SparkSubmitOperator(
-        task_id = "spark_etl_tokens",
-        application = f'{Variable.get("spark_scripts_dir")}/ETL_top_tokens.py',
+    spark_etl_market_charts = SparkSubmitOperator(
+        task_id = "spark_etl_market_charts",
+        application = f'{Variable.get("spark_scripts_dir")}/ETL_market_charts.py',
         conn_id = "spark_default",
         dag = dag,
         driver_class_path = Variable.get("driver_class_path"),
     )
 
-    get_process_date_task >> create_table >> spark_etl_tokens
+    get_process_date_task >> create_table >> spark_etl_market_charts

@@ -9,7 +9,7 @@ class ETLMarketCharts(PySparkSession):
 
     def __init__(self):
         super().__init__()
-        self.table = "historical_data"
+        self.table = "market_charts"
         self.URL_BASE = "https://api.coingecko.com/api/v3/"
         self.id_list = ["bitcoin", "ethereum", "tether", "binancecoin", "ripple"]
         

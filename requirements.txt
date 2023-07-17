@@ -1,5 +1,5 @@
 apache-airflow-providers-apache-spark
-apache-airflow==2.4.0
+apache-airflow==2.6.2
 apache-airflow-providers-amazon
 requests==2.26.0
 SQLAlchemy==1.4.22
