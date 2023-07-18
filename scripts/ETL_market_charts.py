@@ -14,11 +14,11 @@ class ETLMarketCharts(PySparkSession):
         self.id_list = ["bitcoin", "ethereum", "tether", "binancecoin", "ripple"]
         
     def extract(self):
-        json = get_market_chart(self.URL_BASE, self.id_list)
-        return json
+        data = get_market_chart(self.URL_BASE, self.id_list)
+        return data
     
-    def transform(self, json):
-        df = json_to_df_market_chart(json, self.id_list, self.spark)
+    def transform(self, data):
+        df = json_to_df_market_chart(data, self.spark)
         return df
      
     def load(self, df):
@@ -28,11 +28,11 @@ class ETLMarketCharts(PySparkSession):
 
 if __name__ == "__main__":
     etl = ETLMarketCharts()
-    json = etl.extract()
+    data = etl.extract()
     
-    if isinstance(json, str):
-        print('Error:', json)
+    if isinstance(data, str):
+        print('Error:', data)
     
     else:
-        df = etl.transform(json)
+        df = etl.transform(data)
         etl.load(df)

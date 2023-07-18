@@ -28,7 +28,7 @@ def fetch_market_chart(base_url, id):
         response.raise_for_status()
         data = response.json()
         print(f">>> Solicitud de id:{id} exitosa")
-        return data
+        return (id, data)
 
     except requests.exceptions.RequestException as e:
         exception = f"Error al realizar la solicitud: {e}"
