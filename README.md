@@ -59,6 +59,6 @@ docker-compose up --build
     * Key: `spark_scripts_dir`
     * Value: `/opt/airflow/scripts`
 9. Si no aparecen los dags una vez agregadas las conexiones y las variables, detener el contenedor con `ctrl + c` en la misma consola (si por alguna razon usaste un `docker-compose up -d` utiliza en comando `docker-compose down` dentro del mismo directorio) y ejecuta denuevo el comando `docker-compose up`.
-10. Ejecutar el DAG `etl_top_tokens`.
+10. Ejecutar los DAGs `etl_top_tokens` y `etl_market_chart`.
 
 
