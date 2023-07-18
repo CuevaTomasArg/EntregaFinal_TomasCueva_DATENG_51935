@@ -5,10 +5,6 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 
-QUERY_DROP_TABLE ='''
-    DROP TABLE IF EXISTS cuevatomass02_coderhouse.market_charts;
-'''
-
 QUERY_CREATE_TABLE = '''
     CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.market_charts(
         id VARCHAR(100) DISTKEY PRIMARY KEY,
@@ -53,13 +49,6 @@ with DAG(
         dag = dag,
     )
     
-    drop_table = SQLExecuteQueryOperator(
-        task_id = "drop_table",
-        conn_id = "redshift_default",
-        sql = QUERY_DROP_TABLE,
-        dag = dag,
-    )
-    
     create_table = SQLExecuteQueryOperator(
         task_id = "create_table",
         conn_id = "redshift_default",
@@ -75,4 +64,4 @@ with DAG(
         driver_class_path = Variable.get("driver_class_path"),
     )
 
-    get_process_date_task >> drop_table >> create_table >> spark_etl_market_charts
+    get_process_date_task >> create_table >> spark_etl_market_charts
