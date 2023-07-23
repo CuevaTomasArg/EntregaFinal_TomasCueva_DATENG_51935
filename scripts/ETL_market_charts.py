@@ -29,7 +29,7 @@ class ETLMarketCharts(PySparkSession):
         super().__init__()
         self.table = "market_charts"
         self.URL_BASE = "https://api.coingecko.com/api/v3/"
-        self.id_list = ["bitcoin", "ethereum", "tether", "binancecoin", "ripple"]
+        self.id_list = ["bitcoin", "ethereum"]#, "tether", "binancecoin", "ripple"]
 
     def extract(self):
         """
@@ -53,7 +53,8 @@ class ETLMarketCharts(PySparkSession):
             pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado transformados.
 
         """
-        df = json_to_df_market_chart(data, self.id_list, self.spark)
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A LA TRANSFORMACION")
+        df = json_to_df_market_chart(data, self.spark)
         return df
 
     def load(self, df):
@@ -71,4 +72,4 @@ if __name__ == "__main__":
     etl = ETLMarketCharts()
     data = etl.extract()
     df = etl.transform(data)
-    etl.load(df)
+    #etl.load(df)

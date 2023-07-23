@@ -1,7 +1,5 @@
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, LongType
-from functools import reduce
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, format_number
+from pyspark.sql.types import StructType, StructField, LongType, FloatType
+from pyspark.sql.functions import lit
 
 def json_to_df_market_chart(data, spark_session):
     """
@@ -15,33 +13,41 @@ def json_to_df_market_chart(data, spark_session):
     Returns:
         pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
     """
-
-    def process_json(data, schema):
-        prices = [float(prices_list[1]) if prices_list[1] is not None else 0.0 for prices_list in data[1]["prices"]]
-        market_caps = [float(market_caps_list[1]) if market_caps_list[1] is not None else 0.0 for market_caps_list in data[1]["market_caps"]]
-        total_volumes = [float(total_volumes_list[1]) if total_volumes_list[1] is not None else 0.0 for total_volumes_list in data[1]["total_volumes"]]
-        timestamps = [timestamps_list[0] for timestamps_list in data[1]["prices"]]
-        join = zip(prices, market_caps, total_volumes, timestamps)
-        join_list = list(join)
-        join_list = [(item + (data[0],)) for item in join_list]
-        return spark_session.createDataFrame(join_list, schema)
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO AL MODULO json_to_df_market_chart")
+    
+    def create_df(data, value):
+        schema = StructType([
+            StructField("date_unix", LongType(), True),
+            StructField(f"{value}", FloatType(), True),
+        ])
+        list_set = [(item[0], float(item[1])) if isinstance(item[1], (int, float)) else item for item in data]
+        return spark_session.createDataFrame(list_set, schema)
+    
+    def process_data(tuple):
+        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO AL MODULO PROCESS_DATA")
+        json = tuple[1]
+        df_final = None
+        for key, value in json.items():
+            df = create_df(value, key)
+            
+            if df_final is None:
+                df_final = df
+            else:
+                df_final = df_final.join(df, "date_unix", "outer")
+                
+        df_final = df_final.withColumn("id", lit(tuple[0]))
+        df_final = df_final.select("id", "prices", "total_volumes", "volumes", "date_unix")
+        return df_final
 
     data_cleaned = [element for element in data if element is not None]
-    
-    schema = StructType([
-        StructField("prices", FloatType(), True),
-        StructField("market_caps", FloatType(), True),
-        StructField("total_volumes", FloatType(), True),
-        StructField("date_unix", LongType(), True),
-        StructField("id", StringType(), True) 
-    ])
-    
-    dfs = map(process_json, data_cleaned, schema)
-    final_df = reduce(DataFrame.union, dfs)
-    final_df = final_df.withColumn("market_caps", format_number(col("market_caps"), 2))
-    final_df = final_df.select("id", "prices", "total_volumes", "market_caps", "date_unix")
-    
-    return final_df
+
+    dfs = list(map(process_data, data_cleaned))
+
+    for df in dfs:
+        df.show()
+
+    return dfs
+
 
 def transformation_top(json, spark_session):
     """
