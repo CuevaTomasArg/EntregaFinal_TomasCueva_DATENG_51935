@@ -522,3 +522,6 @@ La clase `PySparkSession` se encarga de configurar una sesión de Spark para el 
     - `__init__()`: Constructor de la clase. Configura la sesión de Spark y la conexión con Redshift. Primero, se establecen las variables de entorno `PYSPARK_SUBMIT_ARGS` y `SPARK_CLASSPATH` para especificar el controlador JDBC necesario para la conexión con Redshift. Luego, se crea la sesión de Spark utilizando el builder de SparkSession con la configuración necesaria, como el número de núcleos locales y el nombre de la aplicación. Finalmente, se imprime un mensaje para indicar que la sesión de Spark ha sido creada.
 
 **Nota:** La clase `PySparkSession` es una clase base que se utiliza en otros módulos para crear la sesión de Spark antes de realizar el proceso ETL. No se incluyen otros métodos o funcionalidades adicionales en esta clase, ya que su propósito principal es la configuración de la sesión de Spark y la conexión con Redshift. Los métodos para el proceso ETL específico se implementan en otras clases que heredan de `PySparkSession`.
+
+## ¿Como hago un SMTP con Airflow?
+En tu cuenta de google hacete una contraseña para aplicaciones
