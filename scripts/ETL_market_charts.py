@@ -72,4 +72,4 @@ if __name__ == "__main__":
     etl = ETLMarketCharts()
     data = etl.extract()
     df = etl.transform(data)
-    #etl.load(df)
+    etl.load(df)

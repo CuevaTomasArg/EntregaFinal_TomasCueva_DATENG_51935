@@ -1,5 +1,7 @@
+from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, LongType, FloatType
 from pyspark.sql.functions import lit
+from functools import reduce
 
 def json_to_df_market_chart(data, spark_session):
     """
@@ -15,12 +17,12 @@ def json_to_df_market_chart(data, spark_session):
     """
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO AL MODULO json_to_df_market_chart")
     
-    def create_df(data, value):
+    def create_df(key, value):
         schema = StructType([
             StructField("date_unix", LongType(), True),
-            StructField(f"{value}", FloatType(), True),
+            StructField(f"{key}", FloatType(), True),
         ])
-        list_set = [(item[0], float(item[1])) if isinstance(item[1], (int, float)) else item for item in data]
+        list_set = [(item[0], float(item[1])) if isinstance(item[1], (int, float)) else item for item in value]
         return spark_session.createDataFrame(list_set, schema)
     
     def process_data(tuple):
@@ -28,7 +30,7 @@ def json_to_df_market_chart(data, spark_session):
         json = tuple[1]
         df_final = None
         for key, value in json.items():
-            df = create_df(value, key)
+            df = create_df(key, value)
             
             if df_final is None:
                 df_final = df
@@ -36,18 +38,17 @@ def json_to_df_market_chart(data, spark_session):
                 df_final = df_final.join(df, "date_unix", "outer")
                 
         df_final = df_final.withColumn("id", lit(tuple[0]))
-        df_final = df_final.select("id", "prices", "total_volumes", "volumes", "date_unix")
+        df_final = df_final.select("id", "prices", "total_volumes", "market_caps", "date_unix")
         return df_final
 
     data_cleaned = [element for element in data if element is not None]
 
     dfs = list(map(process_data, data_cleaned))
 
-    for df in dfs:
-        df.show()
+    df = reduce(lambda df1, df2: df1.union(df2), dfs)
 
-    return dfs
-
+    df.show()
+    return df
 
 def transformation_top(json, spark_session):
     """
