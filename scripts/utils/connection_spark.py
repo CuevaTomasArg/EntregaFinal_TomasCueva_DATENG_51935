@@ -1,6 +1,5 @@
 from os import environ as env
 from pyspark.sql import SparkSession
-
 class PySparkSession:
     """
     Clase para configurar una sesión de Spark y establecer la conexión con Amazon Redshift.

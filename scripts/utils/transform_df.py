@@ -1,7 +1,21 @@
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, LongType, FloatType
-from pyspark.sql.functions import lit
+from pyspark.sql.types import StructType, StructField, LongType, StringType
+from pyspark.sql.functions import lit, expr
 from functools import reduce
+
+def clean_number(number):
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A CLEAN_NUMBER")
+    if number is not None:
+        decimal_index = number.find('.')
+        
+        if decimal_index != -1:
+            integer_part = number[:decimal_index]
+            decimal_part = number[decimal_index + 1:decimal_index + 4].ljust(3, '0')
+            cleaned_number = f"{integer_part}.{decimal_part}"
+            return cleaned_number
+        else:
+            return number
+    else:
+        return None
 
 def json_to_df_market_chart(data, spark_session):
     """
@@ -15,40 +29,34 @@ def json_to_df_market_chart(data, spark_session):
     Returns:
         pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado procesados.
     """
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO AL MODULO json_to_df_market_chart")
+    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A LA TRANSFORMACION")
     
-    def create_df(key, value):
-        schema = StructType([
-            StructField("date_unix", LongType(), True),
-            StructField(f"{key}", FloatType(), True),
-        ])
-        list_set = [(item[0], float(item[1])) if isinstance(item[1], (int, float)) else item for item in value]
-        return spark_session.createDataFrame(list_set, schema)
-    
+    spark_session.udf.register("clean_number", clean_number)
+
     def process_data(tuple):
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO AL MODULO PROCESS_DATA")
         json = tuple[1]
-        df_final = None
+        df_dict = {}
         for key, value in json.items():
-            df = create_df(key, value)
+            schema = StructType([
+                StructField("date_unix", LongType(), True),
+                StructField(f"{key}", StringType(), True),
+            ])
+            df = spark_session.createDataFrame(value, schema)
+            df = df.withColumn(f"{key}", expr(f"clean_number({key})").alias(f"{key}"))
+            df_dict[key] = df
             
-            if df_final is None:
-                df_final = df
-            else:
-                df_final = df_final.join(df, "date_unix", "outer")
-                
+        df_final = reduce(lambda df1, df2: df1.join(df2, "date_unix", "outer"), df_dict.values())
         df_final = df_final.withColumn("id", lit(tuple[0]))
         df_final = df_final.select("id", "prices", "total_volumes", "market_caps", "date_unix")
         return df_final
 
     data_cleaned = [element for element in data if element is not None]
-
     dfs = list(map(process_data, data_cleaned))
-
     df = reduce(lambda df1, df2: df1.union(df2), dfs)
 
     df.show()
     return df
+
 
 def transformation_top(json, spark_session):
     """

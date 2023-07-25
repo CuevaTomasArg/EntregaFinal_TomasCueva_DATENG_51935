@@ -1,7 +1,7 @@
 from utils.extract_CoinGecko import get_market_chart
 from utils.transform_df import json_to_df_market_chart
 from utils.load_redshift import load_to_redshift
-from utils.pyspark import PySparkSession
+from utils.connection_spark import PySparkSession
 
 class ETLMarketCharts(PySparkSession):
     """
@@ -53,7 +53,7 @@ class ETLMarketCharts(PySparkSession):
             pyspark.sql.DataFrame: Un DataFrame que contiene los datos de mercado transformados.
 
         """
-        print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A LA TRANSFORMACION")
+        
         df = json_to_df_market_chart(data, self.spark)
         return df
 
@@ -72,4 +72,4 @@ if __name__ == "__main__":
     etl = ETLMarketCharts()
     data = etl.extract()
     df = etl.transform(data)
-    etl.load(df)
+    #etl.load(df)
