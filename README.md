@@ -4,6 +4,7 @@ Dentro de este repositorio se encuentra el proceso del proyecto final del curso 
 
 ## Contenido
 Los archivos a tener en cuenta son:
+* `config/`: Carpeta con archifo airflow.cfg
 * `docker-compose.yml`: Archivo de configuración de Docker Compose. Contiene la configuración de los servicios de Airflow y Spark.
 * `.env`: Archivo de variables de entorno. Contiene variables de conexión a Redshift y driver de Postgres.
 * `Dockerfile.airflow`:  Dockerfile utilizado por Docker Compose para construir la imagen de airflow.
@@ -24,6 +25,8 @@ Los archivos a tener en cuenta son:
         * `transform_df.py`: Modulo para transformar o castear datos.
         * `load_redshift.py`: Modulo de carga de datos desde DataFrame de Spark a Data Warehouse de Amazon Redshift.
     * `ETL_top_tokens.py`: Script que contiene el proceso ETL que ejecuta el DAG `etl_top_tokens.py`.
+    * `ETL_market_charts.py`: Script que contiene el proceso ETL que ejecuta el DAG `etl_market_charts.py`.
+
 
 
 ## Ejecución del proyecto

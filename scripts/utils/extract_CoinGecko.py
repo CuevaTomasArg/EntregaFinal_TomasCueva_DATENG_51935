@@ -82,7 +82,7 @@ def get_criptos_top(base_url):
     }
 
     try:
-        response = requests.get(url, params=parameters)
+        response = requests.get(url, params = parameters)
         response.raise_for_status()  # Verificar si la solicitud fue exitosa
         data = response.json()
         print(">>> Solicitud exitosa")
