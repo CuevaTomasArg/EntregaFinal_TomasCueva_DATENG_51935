@@ -1,7 +1,7 @@
-from utils.extract_CoinGecko import get_criptos_top
-from utils.transform_df import transformation_top
-from utils.load_redshift import load_to_redshift
-from utils.pyspark import PySparkSession
+from .utils.extract_CoinGecko import get_criptos_top
+from .utils.transform_df import transformation_top
+from .utils.load_redshift import load_to_redshift
+from .utils.connection_spark import PySparkSession
 
 class ETLTopTokens(PySparkSession):
     """

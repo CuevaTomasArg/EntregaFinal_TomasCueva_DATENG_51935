@@ -4,6 +4,10 @@ USER root
 
 RUN mkdir -p /home/spark/working_dir
 
-USER 1001
+COPY requirements.txt .
 
-# docker build -t lucastrubiano/spark:spark_3_4_1 .
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENV PYTHONPATH="/opt/airflow/scripts"
+
+USER 1001
