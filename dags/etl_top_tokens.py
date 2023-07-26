@@ -1,5 +1,4 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.models import Variable
@@ -31,19 +30,6 @@ QUERY_CREATE_TABLE = '''
     );
 '''
 
-def get_process_date(**kwargs):
-    if (
-        "process_date" in kwargs["dag_run"].conf
-        and kwargs["dag_run"].conf["process_date"] is not None
-    ):
-        process_date = kwargs["dag_run"].conf["process_date"]
-    else:
-        process_date = kwargs["dag_run"].conf.get(
-            "process_date", datetime.now().strftime("%Y-%m-%d")
-        )
-    kwargs["ti"].xcom_push(key = "process_date", value = process_date)
-
-
 defaul_args = {
     "owner": "Tomas Cueva",
     "start_date": datetime(2023, 7, 1),
@@ -58,13 +44,6 @@ with DAG(
     schedule_interval = "@daily",
     catchup = False,
 ) as dag:
-    
-    get_process_date_task = PythonOperator(
-        task_id = "get_process_date",
-        python_callable = get_process_date,
-        provide_context = True,
-        dag = dag,
-    )
     
     create_table = SQLExecuteQueryOperator(
         task_id="create_table",
@@ -81,4 +60,4 @@ with DAG(
         driver_class_path = Variable.get("driver_class_path"),
     )
 
-    get_process_date_task >> create_table >> spark_etl_tokens
+    create_table >> spark_etl_tokens
