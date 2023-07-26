@@ -3,7 +3,6 @@ from pyspark.sql.functions import lit, expr
 from functools import reduce
 
 def clean_number(number):
-    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A CLEAN_NUMBER")
     if number is not None:
         decimal_index = number.find('.')
         
@@ -31,6 +30,7 @@ def json_to_df_market_chart(data, spark_session):
     """
     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ENTRO A LA TRANSFORMACION")
     
+    # Creo que el error venia de acá
     spark_session.udf.register("clean_number", clean_number)
 
     def process_data(tuple):

@@ -132,7 +132,7 @@ services:
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
       - ./scripts:/opt/airflow/scripts
     working_dir: /opt/airflow/scripts
-  
+
   spark-worker:
     build: 
       context: .
@@ -153,6 +153,7 @@ services:
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
       - ./scripts:/opt/airflow/scripts
     working_dir: /opt/airflow/scripts
+
 
 volumes:
   postgres-db-volume:
