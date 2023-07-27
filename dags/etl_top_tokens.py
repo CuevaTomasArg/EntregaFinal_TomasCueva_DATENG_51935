@@ -1,8 +1,10 @@
 from airflow import DAG
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
+import smtplib
 
 QUERY_CREATE_TABLE = '''
     CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.criptos_market_cap (
@@ -29,6 +31,21 @@ QUERY_CREATE_TABLE = '''
         last_updated TIMESTAMP
     );
 '''
+
+def enviar_fallo():
+    try:
+        smtp_conn = smtplib.SMTP('smtp.gmail.com', 587)
+        smtp_conn.starttls()
+        smtp_conn.login(Variable.get('smtp_from'), Variable.get('smtp_password'))
+        subject = 'ERROR: Market Charts ETL'
+        body_text = 'Error en el proceso ETL, revisar LOGs'
+        message = 'Subject: {}\n\n{}'.format(subject, body_text)
+        smtp_conn.sendmail(Variable.get('smtp_from'), Variable.get('smtp_to'), message)
+        print('Exito')
+    except Exception as exception:
+        print(exception)
+        print('Failure')
+        raise exception
 
 defaul_args = {
     "owner": "Tomas Cueva",
@@ -59,5 +76,13 @@ with DAG(
         dag = dag,
         driver_class_path = Variable.get("driver_class_path"),
     )
+    
+    send_email_failure = PythonOperator(
+        task_id = 'enviar_fallo',
+        python_callable = enviar_fallo,
+        trigger_rule = 'all_failed',  
+        provide_context = True, 
+        dag = dag,
+    )
 
-    create_table >> spark_etl_tokens
+    create_table >> spark_etl_tokens >> send_email_failure
