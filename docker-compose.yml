@@ -122,7 +122,7 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-      - PYTHONPATH=/opt/airflow/scripts
+      #- PYTHONPATH=/opt/airflow/scripts
     ports:
       - 8090:8080
       - 7077:7077
@@ -130,8 +130,8 @@ services:
       - .env
     volumes:
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
-      - ./scripts:/opt/airflow/scripts
-    working_dir: /opt/airflow/scripts
+      #- ./scripts:/opt/airflow/scripts
+    #working_dir: /opt/airflow/scripts
 
   spark-worker:
     build: 
@@ -146,13 +146,13 @@ services:
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
-      - PYTHONPATH=/opt/airflow/scripts
+      #- PYTHONPATH=/opt/airflow/scripts
     env_file:
       - .env
     volumes:
       - ./drivers/postgresql-42.5.2.jar:/tmp/drivers/postgresql-42.5.2.jar
-      - ./scripts:/opt/airflow/scripts
-    working_dir: /opt/airflow/scripts
+      #- ./scripts:/opt/airflow/scripts
+    #working_dir: /opt/airflow/scripts
 
 
 volumes:
