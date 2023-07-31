@@ -4,7 +4,7 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
-from scripts.utils.smtp_gmail import send_error
+import smtplib
 
 QUERY_CREATE_TABLE = '''
     CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.market_charts(
@@ -16,6 +16,21 @@ QUERY_CREATE_TABLE = '''
     );
 '''
 
+def send_error():
+    try:
+        smtp_conn = smtplib.SMTP('smtp.gmail.com', 587)
+        smtp_conn.starttls()
+        smtp_conn.login(Variable.get('smtp_from'), Variable.get('smtp_password'))
+        subject = 'ERROR: Market Charts ETL'
+        body_text = 'Error en el proceso ETL, revisar LOGs'
+        message = 'Subject: {}\n\n{}'.format(subject, body_text)
+        smtp_conn.sendmail(Variable.get('smtp_from'), Variable.get('smtp_to'), message)
+        print('Exito')
+    except Exception as exception:
+        print(exception)
+        print('Failure')
+        raise exception
+
 default_args = {
     "owner": "Tomas Cueva",
     "start_date": datetime(2023, 7, 1),
@@ -23,18 +38,6 @@ default_args = {
     "retry_delay": timedelta(seconds=5),
 }
 
-def email_error():
-    subject = 'ERROR: Market Charts ETL'
-    body_text = 'Error en el proceso ETL, revisar LOGs'
-    
-    send_error(
-        origin = Variable.get('smtp_from'), 
-        password = Variable.get('smtp_password'),
-        to = Variable.get('smtp_to'), 
-        title = subject, 
-        text = body_text
-    )
-    
 with DAG(
     dag_id = "etl_market_chart",
     default_args = default_args,
@@ -60,7 +63,7 @@ with DAG(
 
     send_email_failure = PythonOperator(
         task_id = 'enviar_fallo',
-        python_callable = email_error,
+        python_callable = send_error,
         trigger_rule = 'all_failed',  
         provide_context = True, 
         dag = dag,
