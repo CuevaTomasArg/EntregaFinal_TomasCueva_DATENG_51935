@@ -4,10 +4,4 @@ USER root
 
 RUN mkdir -p /home/spark/working_dir
 
-#COPY requirements.txt .
-
-#RUN pip install --no-cache-dir -r requirements.txt
-
-#ENV PYTHONPATH="/opt/airflow/scripts"
-
 USER 1001

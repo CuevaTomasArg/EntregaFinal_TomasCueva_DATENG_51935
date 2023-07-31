@@ -5,7 +5,7 @@ import concurrent.futures
 import requests
 from utils.load_redshift import load_to_redshift
 from utils.connection_spark import PySparkSession
-
+from datetime import datetime
 class ETLMarketCharts(PySparkSession):
     """
     Clase que implementa un proceso ETL para el top 100 de criptomonedas con mayor capitalización de mercado.
@@ -125,10 +125,14 @@ class ETLMarketCharts(PySparkSession):
                 df = self.spark.createDataFrame(value, schema)
                 df = df.withColumn(f"{key}", expr(f"clean_number({key})").alias(f"{key}"))
                 df_dict[key] = df
-                
+
             df_final = reduce(lambda df1, df2: df1.join(df2, "date_unix", "outer"), df_dict.values())
             df_final = df_final.withColumn("id", lit(tuple[0]))
-            df_final = df_final.select("id", "prices", "total_volumes", "market_caps", "date_unix")
+
+            current_date = datetime.now().date()
+            df_final = df_final.withColumn("date_load", lit(current_date))
+
+            df_final = df_final.select("id", "prices", "total_volumes", "market_caps", "date_unix", "date_load")
             return df_final
 
         data_cleaned = [element for element in data if element is not None]

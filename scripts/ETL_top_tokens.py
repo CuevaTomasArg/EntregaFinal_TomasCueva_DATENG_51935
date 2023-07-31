@@ -46,7 +46,7 @@ class ETLTopTokens(PySparkSession):
 
         try:
             response = requests.get(url, params=parameters)
-            response.raise_for_status()  # Verificar si la solicitud fue exitosa
+            response.raise_for_status()
             data = response.json()
             print(">>> Solicitud exitosa")
             return data
@@ -93,6 +93,11 @@ class ETLTopTokens(PySparkSession):
             'atl_date',
             'last_updated',
         ]
+        
+        df.printSchema()
+        
+        df.show()
+        
         df = df.select(selected_columns)
         
         return df
@@ -113,6 +118,7 @@ if __name__ == "__main__":
     
     if isinstance(json, str):
         print('Error:', json)
+        
     else:
         df = etl.transform(json)
         etl.load(df)

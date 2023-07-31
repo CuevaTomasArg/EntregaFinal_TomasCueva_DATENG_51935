@@ -12,8 +12,14 @@ QUERY_CREATE_TABLE = '''
         prices FLOAT,
         total_volumes FLOAT,
         market_caps FLOAT,
-        date_unix DOUBLE PRECISION 
+        date_unix DOUBLE PRECISION ,
+        date_load DATE
     );
+'''
+
+QUERY_DELETE_CURRENT_DAY_DATA = '''
+    DELETE FROM cuevatomass02_coderhouse.market_charts
+    WHERE transform_date = CURRENT_DATE;
 '''
 
 def send_error():
@@ -53,6 +59,13 @@ with DAG(
         dag = dag,
     )
 
+    delete_current_day_data = SQLExecuteQueryOperator(
+        task_id = "delete_current_day_data",
+        conn_id = "redshift_default",
+        sql = QUERY_DELETE_CURRENT_DAY_DATA,
+        dag = dag,
+    )
+
     spark_etl_market_charts = SparkSubmitOperator(
         task_id = "spark_etl_market_charts",
         application = f'{Variable.get("spark_scripts_dir")}/ETL_market_charts.py',
@@ -69,4 +82,4 @@ with DAG(
         dag = dag,
     )
 
-    create_table >> spark_etl_market_charts >> send_email_failure
+    create_table >> delete_current_day_data >> spark_etl_market_charts >> send_email_failure
