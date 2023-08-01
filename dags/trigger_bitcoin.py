@@ -1,7 +1,7 @@
 from airflow import DAG
-from airflow.operators.dummy_operator import DummyOperator
+#from airflow.operators.dummy_operator import DummyOperator
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
-from airflow.sensors.external_task_sensor import ExternalTaskSensor
+#from airflow.sensors.external_task_sensor import ExternalTaskSensor
 from airflow.models import Variable
 from datetime import datetime, timedelta
 
@@ -14,11 +14,11 @@ default_args = {
 
 # Define el DAG actual
 with DAG(
-    dag_id="my_dag_with_sensor",
-    default_args=default_args,
-    description="DAG con sensor que espera a otro DAG",
-    schedule_interval="@daily",
-    catchup=False
+    dag_id = "trigger_bitcoin",
+    default_args = default_args,
+    description = "Envío de alertas para comprar bitcoin",
+    schedule_interval = "@daily",
+    catchup = False
 ) as dag:
 
     # Define la tarea anterior (de otro DAG) que se debe haber completado correctamente
@@ -26,13 +26,13 @@ with DAG(
     previous_task_id = "check_table_create"  # Reemplaza esto con el ID de la tarea del DAG anterior
 
     # Sensor que espera a que se complete la tarea del DAG anterior
-    wait_for_previous_dag = ExternalTaskSensor(
-        task_id = "wait_for_previous_dag",
-        external_dag_id = previous_dag_id,
-        external_task_id = previous_task_id,
-        mode = "reschedule",  # Puedes usar "reschedule" para volver a verificar en intervalos regulares o "poke" para una verificación más frecuente
-        timeout = 60 * 15,  # Tiempo de espera en segundos antes de que el sensor falle (opcional)
-    )
+    #wait_for_previous_dag = ExternalTaskSensor(
+    #    task_id = "wait_etl_market_chart_dag",
+    #    external_dag_id = previous_dag_id,
+    #    external_task_id = previous_task_id,
+    #    mode = "reschedule",  # Puedes usar "reschedule" para volver a verificar en intervalos regulares o "poke" para una verificación más frecuente
+    #    timeout = 60 * 15,  # Tiempo de espera en segundos antes de que el sensor falle (opcional)
+    #)
 
     spark_bitcoin_trigger = SparkSubmitOperator(
         task_id = "spark_bitcoin_trigger",
@@ -42,4 +42,4 @@ with DAG(
         driver_class_path = Variable.get("driver_class_path"),
     )
 
-    wait_for_previous_dag >> spark_bitcoin_trigger
+    spark_bitcoin_trigger

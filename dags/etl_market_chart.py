@@ -1,11 +1,10 @@
 from airflow import DAG
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import smtplib
-from airflow.sensors.external_task_sensor import ExternalTaskSensor
 
 QUERY_CREATE_TABLE = '''
     CREATE TABLE IF NOT EXISTS cuevatomass02_coderhouse.market_charts(
@@ -37,11 +36,6 @@ def send_error():
         print(exception)
         print('Failure')
         raise exception
-
-def check_table_created():
-    # Aquí puedes implementar la lógica para verificar si la tabla fue creada correctamente en Redshift
-    # Si la tabla existe, devuelve "spark_bitcoin_trigger", de lo contrario, devuelve "enviar_fallo"
-    return "spark_bitcoin_trigger" if True else "enviar_fallo"
 
 default_args = {
     "owner": "Tomas Cueva",
@@ -79,12 +73,6 @@ with DAG(
         dag = dag,
         driver_class_path = Variable.get("driver_class_path"),
     )
-
-    check_table_created = BranchPythonOperator(
-        task_id = "check_table_created",
-        python_callable = check_table_created,
-        dag = dag,
-    )
     
     send_email_failure = PythonOperator(
         task_id = 'enviar_fallo',
@@ -97,4 +85,4 @@ with DAG(
     
 
     # Definir el flujo del DAG
-    create_table >> delete_current_day_data >> spark_etl_market_charts >> [send_email_failure, check_table_created]
+    create_table >> delete_current_day_data >> spark_etl_market_charts >> send_email_failure

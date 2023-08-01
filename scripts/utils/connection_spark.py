@@ -41,5 +41,5 @@ class PySparkSession:
                 .config("spark.jars", self.DRIVER_PATH) \
                 .config("spark.executor.extraClassPath", self.DRIVER_PATH) \
                 .getOrCreate()
-
+                
         print(">>> Session de Spark creada.")
