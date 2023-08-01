@@ -82,7 +82,4 @@ with DAG(
         dag = dag,
     )
     
-    
-
-    # Definir el flujo del DAG
     create_table >> delete_current_day_data >> spark_etl_market_charts >> send_email_failure

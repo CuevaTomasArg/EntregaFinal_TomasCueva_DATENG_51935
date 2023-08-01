@@ -1,4 +1,10 @@
-﻿# 51940-CuevaTomas
+﻿# DOcumentación a agregar
+como hacer lo del SMTP
+cambiar las variables del airflow.cfg del apartado [SMTP]
+Poner las variables adecuadas dentro de Airflow
+Agregar las contraseñas correspondientes a las variables de entorno
+
+# 51940-CuevaTomas
 ---
 Dentro de este repositorio se encuentra el proceso del proyecto final del curso "Data Engineering flex" de Coderhouse.
 
