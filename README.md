@@ -19,7 +19,9 @@ Los archivos a tener en cuenta son:
 * `drivers/`: Carpeta con drivers.
     * `postgresql-42.5.2.jar`: Driver de Postgres para Spark.
 * `dags/`: Carpeta con los archivos de los DAGs.
-    * `etl_top_tokens.py`: DAG que ejecuta el ETL de extracción, transformación y carga de datos de API de CoinGecko a Amazon Redshift.
+    * `etl_top_tokens.py`: DAG que ejecuta el ETL de datos de la API de CoinGecko a Amazon Redshift; extrae los 100 tokens con mayor capitalización de mercado.
+    * `etl_market_charts.py`: DAG que ejecuta el ETL de datos de la API de CoinGecko a Amazon Redshift; extrae los datos históricos del mercado que incluyen precio, capitalización de mercado y volumen de 24 horas de 5 tokens.
+    * `trigger_bitcoin`: Este DAG utiliza un sensor SQL, que verifica si existe la tabla `market_charts` en Redshift, si existe, se ejecuta una consulta a la tabla para hacer el calculo de la tendencia de bitcoin en los ultimos 7 días y envia un email con la tendencia de bitcoin.
 * `logs/`: Carpeta con los archivos de logs de Airflow.
 * `plugins/`: Carpeta con los plugins de Airflow.
 * `scripts/`: Carpeta con scripts SQL, Bash y Python.
@@ -27,8 +29,7 @@ Los archivos a tener en cuenta son:
     * `sql/`: Carpeta con scripts SQL.
         * `creacion_tabla.sql`: scripts de creación de tablas en Amazon Redshift.
     * `utils/`: Paquete de python compuesto por modulos para extraer, transformar y cargar datos.
-        * `extract_CoinGecko.py`: Modulo para extrar datos de la API pública de CoinGecko.
-        * `transform_df.py`: Modulo para transformar o castear datos.
+        * `connection_spark.py`: Modulo con clase para crear una sesión de spark con conección a Amazon Redshift.
         * `load_redshift.py`: Modulo de carga de datos desde DataFrame de Spark a Data Warehouse de Amazon Redshift.
     * `ETL_top_tokens.py`: Script que contiene el proceso ETL que ejecuta el DAG `etl_top_tokens.py`.
     * `ETL_market_charts.py`: Script que contiene el proceso ETL que ejecuta el DAG `etl_market_charts.py`.
@@ -61,13 +62,24 @@ docker-compose up --build
     * Host: `spark://spark`
     * Port: `7077`
     * Extra: `{"queue": "default"}`
-7. En la pestaña `Admin -> Variables` crear una nueva variable con los siguientes datos:
-    * Key: `driver_class_path`
-    * Value: `/tmp/drivers/postgresql-42.5.2.jar`
-8. En la pestaña `Admin -> Variables` crear una nueva variable con los siguientes datos:
-    * Key: `spark_scripts_dir`
-    * Value: `/opt/airflow/scripts`
+7. En la pestaña `Admin -> Variables` crear las siguientes variables con los siguientes datos:
+    1. Variables para la ruta del Driver de Postgre:
+        * Key: `driver_class_path`
+        * Value: `/tmp/drivers/postgresql-42.5.2.jar`
+    2. Variable para la ruta con los scripts para los DAGs que utilizan operadores de Spark:
+        * Key: `spark_scripts_dir`
+        * Value: `/opt/airflow/scripts`
+8. Para el envío de Emails con SMTP, es necesario que la cuenta desde donde se va a enviar el email sea de tipo `gmail` y se genera una contraseña de aplicación. Posteriormente creamos las siguientes variables:
+    1. Email de origen:
+        * Key: `smtp_from`
+        * Value: `tu_email@gmail.com`
+    2. Contraseña de aplicación:    
+        * Key: `smtp_password`
+        * Value: `<contraseña de aplicación creada en gmail>`
+    3. Email destinatario:
+        * Key: `smtp_to`
+        * Value: `el email al cual deseas enviar tus reportes diarios(puede ser @gmail, @yahoo o cualquier otro).`
 9. Si no aparecen los dags una vez agregadas las conexiones y las variables, detener el contenedor con `ctrl + c` en la misma consola (si por alguna razon usaste un `docker-compose up -d` utiliza en comando `docker-compose down` dentro del mismo directorio) y ejecuta denuevo el comando `docker-compose up`.
-10. Ejecutar los DAGs `etl_top_tokens` y `etl_market_chart`.
+10. Ejecutar los DAGs `etl_top_tokens` y `etl_market_chart`, si es la primera vez que ejecutas los dags, espera a que finalice el DAG `etl_market_chart` para poder ejecutar el DAG `trigger_bitcoin`.
 
 
