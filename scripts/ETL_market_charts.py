@@ -1,14 +1,15 @@
+import requests
 from pyspark.sql.types import StructType, StructField, LongType, StringType
 from pyspark.sql.functions import lit, expr
 from functools import reduce
 import concurrent.futures
-import requests
 from utils.load_redshift import load_to_redshift
 from utils.connection_spark import PySparkSession
 from datetime import datetime
+
 class ETLMarketCharts(PySparkSession):
     """
-    Clase que implementa un proceso ETL para el top 100 de criptomonedas con mayor capitalización de mercado.
+    Clase que implementa un proceso ETL para obtener el gráfico de mercado de las criptomonedas con mayor capitalización.
 
     Atributos:
         table (str): El nombre de la tabla en Redshift donde se cargarán los datos.
@@ -76,14 +77,14 @@ class ETLMarketCharts(PySparkSession):
             "interval": "daily",
             "precision": "3"
         }
-        
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future_to_id = {executor.submit(self.fetch_market_chart, id, parameters): id for id in self.id_list}
-            
+
             for future in concurrent.futures.as_completed(future_to_id):
                 data = future.result()
                 market_chart_list.append(data)
-                
+
         return market_chart_list
 
     def transform(self, data):
@@ -100,7 +101,7 @@ class ETLMarketCharts(PySparkSession):
         def clean_number(number):
             if number is not None:
                 decimal_index = number.find('.')
-                
+
                 if decimal_index != -1:
                     integer_part = number[:decimal_index]
                     decimal_part = number[decimal_index + 1:decimal_index + 4].ljust(3, '0')
@@ -110,7 +111,7 @@ class ETLMarketCharts(PySparkSession):
                     return number
             else:
                 return None
-        
+
         # Registro de la función clean_number como UDF (User-Defined Function) en Spark
         self.spark.udf.register("clean_number", clean_number)
 

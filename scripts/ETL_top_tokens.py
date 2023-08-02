@@ -1,10 +1,10 @@
+import requests
 from utils.load_redshift import load_to_redshift
 from utils.connection_spark import PySparkSession
-import requests
 
 class ETLTopTokens(PySparkSession):
     """
-    Clase que implementa un proceso ETL para el top 100 de criptomonedas con mayor capitalización de mercado.
+    Clase que implementa un proceso ETL para obtener el top 100 de criptomonedas con mayor capitalización de mercado.
     
     Atributos:
         table (str): El nombre de la tabla en Redshift donde se cargarán los datos.

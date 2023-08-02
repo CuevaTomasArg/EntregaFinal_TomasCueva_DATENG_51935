@@ -14,8 +14,18 @@ QUERY_CHECK_TABLE = """
       AND table_name = 'market_charts'
 """
 
-
 def bitcoin_trend(**kwargs):
+    """
+    Realiza una consulta a la base de datos para obtener la tendencia de Bitcoin en los últimos 7 días.
+
+    Parámetros:
+        **kwargs: Argumentos adicionales, proporcionados por Airflow.
+
+    Almacena el resultado de la consulta en XCom para que pueda ser utilizado por otras tareas.
+
+    Raises:
+        sqlalchemy.exc.DatabaseError: Si ocurre un error al ejecutar la consulta en la base de datos.
+    """
     REDSHIFT_HOST = env['REDSHIFT_HOST']
     REDSHIFT_PORT = env['REDSHIFT_PORT']
     REDSHIFT_DB = env['REDSHIFT_DB']
@@ -41,21 +51,32 @@ def bitcoin_trend(**kwargs):
         result = connection.execute(text(QUERY_BITCOIN_TREND)).fetchone()
 
     trend_bitcoin = result[0]
-    kwargs["ti"].xcom_push(key = "trend_bitcoin", value = trend_bitcoin)
+    kwargs["ti"].xcom_push(key="trend_bitcoin", value=trend_bitcoin)
 
 def bitcoin_alert_email(**kwargs):
+    """
+    Envía un correo electrónico con la tendencia de Bitcoin en los últimos 7 días.
+
+    Parámetros:
+        **kwargs: Argumentos adicionales, proporcionados por Airflow.
+
+    Envia un correo electrónico con la tendencia obtenida de XCom.
+
+    Raises:
+        smtplib.SMTPException: Si ocurre un error al enviar el correo electrónico.
+    """
     try:
         smtp_conn = smtplib.SMTP('smtp.gmail.com', 587)
         smtp_conn.starttls()
         smtp_conn.login(Variable.get('smtp_from'), Variable.get('smtp_password'))
         subject = 'TENDENCIA DE BITCOIN ESTA SEMANA'
-        trend_bitcoin = kwargs["ti"].xcom_pull(key = "trend_bitcoin", task_ids = "get_trend_bitcoin")
+        trend_bitcoin = kwargs["ti"].xcom_pull(key="trend_bitcoin", task_ids="get_trend_bitcoin")
         print(f"La tendencia semanal fue:{trend_bitcoin}")
         body_text = f"Tendencia de Bitcoin en los ultimos 7 dias: {trend_bitcoin:.2f}%"
         message = 'Subject: {}\n\n{}'.format(subject, body_text)
         smtp_conn.sendmail(Variable.get('smtp_from'), Variable.get('smtp_to'), message)
         print('Exito')
-    except Exception as exception:
+    except smtplib.SMTPException as exception:
         print(exception)
         print('Failure')
         raise exception
@@ -74,7 +95,6 @@ with DAG(
     schedule_interval = "@weekly",
     catchup = False
 ) as dag:
-
     check_table_sensor = SqlSensor(
         task_id = "check_market_charts_table",
         conn_id = "redshift_default",
@@ -82,18 +102,18 @@ with DAG(
         poke_interval = 30,
         timeout = 3600,
     )
-    
+
     get_trend_bitcoin = PythonOperator(
         task_id = "get_trend_bitcoin",
         python_callable = bitcoin_trend,
         provide_context = True,
         dag = dag,
     )
-    
+
     bitcoin_alert = PythonOperator(
         task_id = 'send_alert',
         python_callable = bitcoin_alert_email,
-        provide_context = True, 
+        provide_context = True,
         dag = dag,
     )
 

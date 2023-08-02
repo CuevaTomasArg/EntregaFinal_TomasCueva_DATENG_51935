@@ -1,12 +1,7 @@
-﻿# DOcumentación a agregar
-como hacer lo del SMTP
-cambiar las variables del airflow.cfg del apartado [SMTP]
-Poner las variables adecuadas dentro de Airflow
-Agregar las contraseñas correspondientes a las variables de entorno
-
-# 51940-CuevaTomas
+﻿# 51940-CuevaTomas
 ---
-Dentro de este repositorio se encuentra el proceso del proyecto final del curso "Data Engineering flex" de Coderhouse.
+## Agradecimiento
+Quiero expresar mi más sincero agradecimiento a mi profesor Lucas Trubiano y a mi tutor Lautaro Odoni por su invaluable guía y apoyo en el desarrollo de este proyecto. Sus conocimientos, aportes y enseñanzas fueron de un valor excepcional, tanto dentro como fuera de las clases. Su dedicación y disposición para enseñar no tiene precio Estoy enormemente agradecido por todo el conocimiento que me aporto a lo largo de la cursada, el cual fue mucho más y mejor del que se presentaba en el plan de estudio, para mí, eso es invaluable, ¡muchas gracias por todo!.
 
 ## Contenido
 Los archivos a tener en cuenta son:
